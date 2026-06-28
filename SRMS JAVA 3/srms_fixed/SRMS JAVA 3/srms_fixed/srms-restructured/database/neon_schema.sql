@@ -1,11 +1,4 @@
--- ============================================================
--- SRMS - Semester Registration Management System
--- Neon PostgreSQL Schema  (converted from SQL Server)
--- ============================================================
 
--- ============================================================
--- DROP TABLES (dependency order)
--- ============================================================
 DROP TABLE IF EXISTS coordinator_assignments CASCADE;
 DROP TABLE IF EXISTS registration_subjects   CASCADE;
 DROP TABLE IF EXISTS registrations           CASCADE;
@@ -17,9 +10,7 @@ DROP TABLE IF EXISTS password_reset_tokens   CASCADE;
 DROP TABLE IF EXISTS users                   CASCADE;
 DROP TABLE IF EXISTS courses                 CASCADE;
 
--- ============================================================
--- COURSES
--- ============================================================
+
 CREATE TABLE courses (
     course_id   SERIAL PRIMARY KEY,
     course_name VARCHAR(100) NOT NULL,
@@ -28,9 +19,7 @@ CREATE TABLE courses (
     created_at  TIMESTAMP    DEFAULT NOW()
 );
 
--- ============================================================
--- USERS
--- ============================================================
+
 CREATE TABLE users (
     user_id       SERIAL PRIMARY KEY,
     username      VARCHAR(50)  NOT NULL UNIQUE,
@@ -42,9 +31,7 @@ CREATE TABLE users (
     created_at    TIMESTAMP    DEFAULT NOW()
 );
 
--- ============================================================
--- STUDENTS
--- ============================================================
+
 CREATE TABLE students (
     student_id  SERIAL PRIMARY KEY,
     user_id     INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -55,9 +42,7 @@ CREATE TABLE students (
     created_at  TIMESTAMP DEFAULT NOW()
 );
 
--- ============================================================
--- COORDINATORS
--- ============================================================
+
 CREATE TABLE coordinators (
     coord_id   SERIAL PRIMARY KEY,
     user_id    INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -65,9 +50,7 @@ CREATE TABLE coordinators (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- ============================================================
--- COORDINATOR ASSIGNMENTS
--- ============================================================
+
 CREATE TABLE coordinator_assignments (
     assign_id   SERIAL PRIMARY KEY,
     coord_id    INT NOT NULL REFERENCES coordinators(coord_id) ON DELETE CASCADE,
@@ -77,9 +60,7 @@ CREATE TABLE coordinator_assignments (
     CONSTRAINT uq_coord_assign UNIQUE (coord_id, course_id, semester)
 );
 
--- ============================================================
--- SUBJECTS
--- ============================================================
+
 CREATE TABLE subjects (
     subject_id   SERIAL PRIMARY KEY,
     subject_code VARCHAR(20)  NOT NULL UNIQUE,
@@ -90,9 +71,7 @@ CREATE TABLE subjects (
     created_at   TIMESTAMP DEFAULT NOW()
 );
 
--- ============================================================
--- REGISTRATION PERIODS
--- ============================================================
+
 CREATE TABLE registration_periods (
     period_id  SERIAL PRIMARY KEY,
     acad_year  VARCHAR(20) NOT NULL,
@@ -102,9 +81,7 @@ CREATE TABLE registration_periods (
     created_at TIMESTAMP   DEFAULT NOW()
 );
 
--- ============================================================
--- REGISTRATIONS
--- ============================================================
+
 CREATE TABLE registrations (
     reg_id           SERIAL PRIMARY KEY,
     student_id       INT NOT NULL REFERENCES students(student_id),
@@ -118,18 +95,14 @@ CREATE TABLE registrations (
     remarks          VARCHAR(500)
 );
 
--- ============================================================
--- REGISTRATION SUBJECTS
--- ============================================================
+
 CREATE TABLE registration_subjects (
     id         SERIAL PRIMARY KEY,
     reg_id     INT NOT NULL REFERENCES registrations(reg_id) ON DELETE CASCADE,
     subject_id INT NOT NULL REFERENCES subjects(subject_id)
 );
 
--- ============================================================
--- PASSWORD RESET TOKENS
--- ============================================================
+
 CREATE TABLE password_reset_tokens (
     token_id   SERIAL PRIMARY KEY,
     user_id    INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -142,9 +115,7 @@ CREATE INDEX ix_prt_token ON password_reset_tokens(token);
 CREATE INDEX ix_reg_periods_created ON registration_periods(created_at DESC);
 CREATE INDEX ix_reg_subjects_subject ON registration_subjects(subject_id);
 
--- ============================================================
--- SEED DATA
--- ============================================================
+
 
 INSERT INTO courses (course_name, short_code, duration) VALUES
 ('Bachelor of Computer Applications', 'BCA', '3 years / 6 semesters'),
