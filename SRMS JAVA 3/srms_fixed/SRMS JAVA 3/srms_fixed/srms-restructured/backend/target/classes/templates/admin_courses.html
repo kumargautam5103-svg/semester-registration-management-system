@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Course Management</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+<div th:if="${flash}" style="padding:0 1.5rem;margin-top:0.75rem">
+  <div class="alert" th:classappend="'alert-' + ${flash_type}" th:text="${flash}"></div>
+</div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Admin</div>
+    <a class="sidebar-item" th:href="@{/admin}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item" th:href="@{/admin/users}"><span class="icon">👥</span> Users</a>
+    <a class="sidebar-item active" th:href="@{/admin/courses}"><span class="icon">📚</span> Courses</a>
+    <a class="sidebar-item" th:href="@{/admin/subjects}"><span class="icon">📋</span> Subjects</a>
+  </div>
+
+  <div class="main-content">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+      <div>
+        <div class="page-title">Course Management</div>
+        <div class="page-sub" style="margin-bottom:0">Manage programmes offered by the institution</div>
+      </div>
+      <button class="btn-primary" onclick="document.getElementById('modal-addcourse').classList.add('open')">+ Add Course</button>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Course Name</th><th>Code</th><th>Duration</th><th>Students</th><th style="width:80px">Actions</th></tr></thead>
+          <tbody>
+            <tr th:each="c : ${courses}">
+              <td style="font-weight:500" th:text="${c['course_name']}"></td>
+              <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(c['short_code'])}"
+                        th:text="${c['short_code']}"></span></td>
+              <td style="font-size:12px;color:var(--color-text-secondary)" th:text="${c['duration']}"></td>
+              <td th:text="${c['student_count']}"></td>
+              <td>
+                <form method="post" th:action="@{/admin/courses/delete/{id}(id=${c['course_id']})}"
+                      onsubmit="return confirm('Delete this course? This will fail if students are enrolled.')"
+                      style="display:inline">
+                  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                  <button class="btn-small btn-reject" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(courses)}">
+              <td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No courses found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Course Modal -->
+<div class="modal-backdrop" id="modal-addcourse" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">Add New Course</div>
+    <form method="post" th:action="@{/admin/courses/add}">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <div class="form-group">
+        <label class="form-label">Course Name</label>
+        <input class="form-input" name="course_name" placeholder="e.g. Bachelor of Computer Applications" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Short Code</label>
+        <input class="form-input" name="short_code" placeholder="e.g. BCA" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration</label>
+        <input class="form-input" name="duration" placeholder="e.g. 3 years / 6 semesters" required/>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('modal-addcourse').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn-primary" style="width:auto;padding:8px 20px">Add Course</button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

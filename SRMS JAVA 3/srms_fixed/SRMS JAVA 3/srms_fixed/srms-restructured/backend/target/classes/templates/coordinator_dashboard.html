@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Coordinator Dashboard</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div th:if="${flash}" style="padding:0 1.5rem;margin-top:0.75rem">
+  <div class="alert" th:classappend="'alert-' + ${flash_type}" th:text="${flash}"></div>
+</div>
+<div th:if="${flash2}" style="padding:0 1.5rem;margin-top:0.25rem">
+  <div class="alert" th:classappend="'alert-' + ${flash_type2}" th:text="${flash2}"></div>
+</div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Coordinator</div>
+    <a class="sidebar-item active" th:href="@{/coordinator}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item" th:href="@{/coordinator/students}"><span class="icon">👤</span> Students</a>
+    <a class="sidebar-item" th:href="@{/coordinator/verify}"><span class="icon">✔</span> Verify</a>
+  </div>
+
+  <div class="main-content">
+    <div class="page-title">Coordinator Dashboard</div>
+    <div class="page-sub" sec:authentication="name">Welcome</div>
+
+    <!-- Initiate Registration Banner -->
+    <div class="card" style="margin-bottom:1.2rem;padding:1.2rem 1.4rem;"
+         th:style="'margin-bottom:1.2rem;padding:1.2rem 1.4rem;border-left:4px solid ' + (${reg_open} ? '#185FA5' : '#ccc')">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px">
+            📢 Initiate Semester Registration
+          </div>
+          <div th:if="${reg_open}" style="font-size:13px;color:#444">
+            Registration period <strong th:text="${acad_year}"></strong> is currently open.
+            Click to notify all your students via email that registration has begun.
+          </div>
+          <div th:unless="${reg_open}" style="font-size:13px;color:#888">
+            No active registration period. Ask the Admin to open one before initiating.
+          </div>
+        </div>
+        <form method="post" th:action="@{/coordinator/initiate-registration}"
+              onsubmit="return confirm('Send registration notification emails to all your students?')">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" th:disabled="${!reg_open}"
+                  th:style="'padding:9px 20px;border-radius:6px;border:none;font-size:13px;font-weight:500;color:#fff;display:flex;align-items:center;gap:7px;white-space:nowrap;background:' + (${reg_open} ? '#185FA5' : '#ccc') + ';cursor:' + (${reg_open} ? 'pointer' : 'not-allowed')">
+            <span style="font-size:16px">📨</span> Initiate Registration
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Coordinator Profile -->
+    <div th:if="${coord_info}" class="card" style="margin-bottom:1.2rem;padding:1rem 1.2rem">
+      <div class="card-title" style="margin-bottom:10px">🎓 My Profile</div>
+      <div style="display:flex;gap:2rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.4px">Name</div>
+          <div style="font-weight:500;font-size:14px" th:text="${coord_info['full_name']}"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.4px">Email</div>
+          <div style="font-size:14px" th:text="${coord_info['email']} ?: '—'"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.4px">Department</div>
+          <div style="font-size:14px" th:text="${coord_info['department']} ?: '—'"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assigned Courses -->
+    <div class="card" style="margin-bottom:1.2rem;padding:1rem 1.2rem">
+      <div class="card-title" style="margin-bottom:10px">📋 My Assigned Courses &amp; Semesters</div>
+      <div th:if="${!#lists.isEmpty(assignments)}">
+        <th:block th:with="prevCourse=''">
+          <th:block th:each="a,iterStat : ${assignments}">
+            <!-- Course header when course changes -->
+            <div th:if="${a['short_code'] != prevCourse}"
+                 style="margin-bottom:8px;margin-top:12px">
+              <span style="font-weight:600;font-size:13px">
+                <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(a['short_code'])}"
+                      th:text="${a['short_code']}"></span>
+                <span th:text="${a['course_name']}"></span>
+              </span>
+            </div>
+            <span class="badge" style="background:#e8eaf6;color:#3949ab;font-size:12px;padding:4px 10px;display:inline-block;margin:2px">
+              Sem <span th:text="${a['semester']}"></span>
+            </span>
+          </th:block>
+        </th:block>
+      </div>
+      <div th:unless="${!#lists.isEmpty(assignments)}"
+           style="font-size:13px;color:var(--color-text-secondary)">
+        No courses assigned yet. Contact the administrator.
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metric-grid">
+      <div class="metric">
+        <div class="metric-label">My Students</div>
+        <div class="metric-val" th:text="${scoped_students}">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Pending Approvals</div>
+        <div class="metric-val" style="color:#BA7517" th:text="${pending}">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Approved</div>
+        <div class="metric-val" style="color:#3B6D11" th:text="${approved}">0</div>
+      </div>
+    </div>
+
+    <div th:if="${pending > 0}" class="alert alert-warn">
+      <span th:text="${pending}"></span> registration(s) in your courses awaiting review.
+      <a th:href="@{/coordinator/verify}" style="color:#854F0B;font-weight:500;margin-left:8px">Review now →</a>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card">
+      <div class="card-title">Recent Activity (My Courses)</div>
+      <div th:if="${!#lists.isEmpty(recent)}" class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Sem</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            <tr th:each="r : ${recent}">
+              <td th:text="${r['full_name']}"></td>
+              <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(r['short_code'])}"
+                        th:text="${r['short_code']}"></span></td>
+              <td style="text-align:center" th:text="${r['semester']}"></td>
+              <td><span class="badge" th:classappend="'badge-' + ${r['status']}"
+                        th:text="${#strings.capitalize(r['status'])}"></span></td>
+              <td style="font-size:12px;color:var(--color-text-secondary)" th:text="${r['submitted_at']} ?: '—'"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div th:unless="${!#lists.isEmpty(recent)}"
+           style="color:var(--color-text-secondary);font-size:13px">
+        No activity yet in your assigned courses.
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

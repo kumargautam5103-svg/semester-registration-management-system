@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="'SRMS — ' + ${pageTitle != null ? pageTitle : 'Semester Registration'}">SRMS</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+    <div class="nav-right" sec:authorize="isAuthenticated()">
+      <span class="nav-user" sec:authentication="name">User</span>
+      <div class="nav-avatar" sec:authentication="name">??</div>
+      <form th:action="@{/logout}" method="post" style="display:inline">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn-logout">Log out</button>
+      </form>
+    </div>
+  </nav>
+
+  <!-- Flash messages -->
+  <div th:if="${flash}" style="padding:0 1.5rem;margin-top:0.75rem">
+    <div class="alert" th:classappend="'alert-' + ${flash_type}" th:text="${flash}"></div>
+  </div>
+  <div th:if="${flash2}" style="padding:0 1.5rem;margin-top:0.25rem">
+    <div class="alert" th:classappend="'alert-' + ${flash_type2}" th:text="${flash2}"></div>
+  </div>
+
+  <!-- Page content -->
+  <div th:replace="~{this :: body_content}"></div>
+  <th:block th:fragment="body_content">
+    <!-- overridden by child templates -->
+  </th:block>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Students</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Coordinator</div>
+    <a class="sidebar-item" th:href="@{/coordinator}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item active" th:href="@{/coordinator/students}"><span class="icon">👤</span> Students</a>
+    <a class="sidebar-item" th:href="@{/coordinator/verify}"><span class="icon">✔</span> Verify</a>
+  </div>
+
+  <div class="main-content">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+      <div>
+        <div class="page-title">Students</div>
+        <div class="page-sub" style="margin-bottom:0">Students in your assigned courses &amp; semesters</div>
+      </div>
+      <!-- Export buttons -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-right:4px">Export:</div>
+        <a class="btn-small" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;text-decoration:none"
+           th:href="@{/coordinator/export(type='registered',fmt='csv',course=${course_filter},sem=${sem_filter})}">↓ Registered CSV</a>
+        <a class="btn-small" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;text-decoration:none"
+           th:href="@{/coordinator/export(type='registered',fmt='excel',course=${course_filter},sem=${sem_filter})}">↓ Registered Excel</a>
+        <a class="btn-small" style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;text-decoration:none"
+           th:href="@{/coordinator/export(type='unregistered',fmt='csv',course=${course_filter},sem=${sem_filter})}">↓ Unregistered CSV</a>
+        <a class="btn-small" style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;text-decoration:none"
+           th:href="@{/coordinator/export(type='unregistered',fmt='excel',course=${course_filter},sem=${sem_filter})}">↓ Unregistered Excel</a>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" th:action="@{/coordinator/students}"
+          style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+      <input class="search-input" name="q" placeholder="Search name / roll…"
+             th:value="${search}" style="flex:1;min-width:160px"/>
+      <select class="form-select" name="course" style="width:auto">
+        <option value="">All My Courses</option>
+        <option th:each="c : ${assigned_courses}"
+                th:value="${c['short_code']}"
+                th:selected="${course_filter == c['short_code']}"
+                th:text="${c['short_code'] + ' — ' + c['course_name']}"></option>
+      </select>
+      <select class="form-select" name="sem" style="width:auto">
+        <option value="">All My Sems</option>
+        <option th:each="s : ${assigned_sems}"
+                th:value="${s}"
+                th:selected="${sem_filter != null and sem_filter == s.toString()}"
+                th:text="'Sem ' + ${s}"></option>
+      </select>
+      <button class="btn-primary" type="submit" style="width:auto;padding:8px 16px">Filter</button>
+      <a class="btn-secondary" th:href="@{/coordinator/students}" style="padding:8px 16px;text-decoration:none">Clear</a>
+    </form>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Roll No</th><th>Course</th><th>Sem</th><th>Status</th><th>Subjects</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="s : ${students}">
+              <td style="font-weight:500" th:text="${s['full_name']}"></td>
+              <td style="font-size:12px" th:text="${s['roll_no']}"></td>
+              <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(s['short_code'])}"
+                        th:text="${s['short_code']}"></span></td>
+              <td style="text-align:center" th:text="${s['current_sem']}"></td>
+              <td>
+                <span th:if="${s['status'] != null}" class="badge"
+                      th:classappend="'badge-' + ${s['status']}"
+                      th:text="${#strings.capitalize(s['status'])}"></span>
+                <span th:unless="${s['status'] != null}" class="badge"
+                      style="background:#f5f5f5;color:#999">Not Registered</span>
+              </td>
+              <td style="font-size:11px;color:var(--color-text-secondary)"
+                  th:text="${s['subjects']} ?: '—'"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(students)}">
+              <td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">
+                No students found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

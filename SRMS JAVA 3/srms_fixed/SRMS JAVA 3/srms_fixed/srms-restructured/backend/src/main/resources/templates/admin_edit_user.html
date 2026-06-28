@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Edit User</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+<div th:if="${flash}" style="padding:0 1.5rem;margin-top:0.75rem">
+  <div class="alert" th:classappend="'alert-' + ${flash_type}" th:text="${flash}"></div>
+</div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Admin</div>
+    <a class="sidebar-item" th:href="@{/admin}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item active" th:href="@{/admin/users}"><span class="icon">👥</span> Users</a>
+    <a class="sidebar-item" th:href="@{/admin/courses}"><span class="icon">📚</span> Courses</a>
+    <a class="sidebar-item" th:href="@{/admin/subjects}"><span class="icon">📋</span> Subjects</a>
+  </div>
+
+  <div class="main-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <div>
+        <div class="page-title">Edit User</div>
+        <div class="page-sub" style="margin-bottom:0">
+          Editing: <strong th:text="${user['full_name']}"></strong>
+          <span class="badge" style="margin-left:8px"
+                th:classappend="${user['is_active'] == true or user['is_active'] == 1} ? 'badge-approved' : 'badge-rejected'"
+                th:text="${(user['is_active'] == true or user['is_active'] == 1) ? 'Active' : 'Inactive'}"></span>
+        </div>
+      </div>
+      <a th:href="@{/admin/users}" class="btn-secondary" style="text-decoration:none;padding:8px 16px;display:inline-block">← Back to Users</a>
+    </div>
+
+    <div class="card" style="max-width:700px">
+      <div class="card-title">User Details</div>
+      <form method="post" th:action="@{/admin/users/edit/{id}(id=${user['user_id']})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name <span style="color:red">*</span></label>
+            <input class="form-input" name="full_name" th:value="${user['full_name']}" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username <span style="color:red">*</span></label>
+            <input class="form-input" name="username" th:value="${user['username']}" required/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" name="email" th:value="${user['email']} ?: ''"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password <span style="color:#aaa;font-size:11px">(blank = keep current)</span></label>
+            <input class="form-input" type="password" name="password" placeholder="Enter new password to change"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:1.2rem">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" name="is_active" value="1"
+                   th:checked="${user['is_active'] == true or user['is_active'] == 1}"
+                   style="width:16px;height:16px;cursor:pointer"/>
+            <span class="form-label" style="margin:0">Account Active</span>
+          </label>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px;margin-left:24px">
+            Unchecking this will prevent the user from logging in.
+          </div>
+        </div>
+
+        <!-- Student details -->
+        <div th:if="${user['role'] == 'student'}"
+             style="border-top:1px solid var(--color-border-tertiary);margin:1rem 0;padding-top:1rem">
+          <div style="font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-bottom:1rem;text-transform:uppercase;letter-spacing:.5px">🎒 Student Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Roll No</label>
+              <input class="form-input" th:value="${user['roll_no']} ?: '—'" disabled
+                     style="background:var(--color-background-secondary);color:var(--color-text-secondary)"/>
+              <div style="font-size:11px;color:#aaa;margin-top:3px">Auto-generated, cannot be changed.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Batch</label>
+              <input class="form-input" name="batch" th:value="${user['batch']} ?: ''" placeholder="e.g. 2022-2025"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Course</label>
+              <select class="form-select" name="course_id">
+                <option th:each="c : ${courses}"
+                        th:value="${c['course_id']}"
+                        th:selected="${c['course_id'] == user['course_id']}"
+                        th:text="${c['short_code'] + ' — ' + c['course_name']}"></option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Current Semester</label>
+              <input class="form-input" type="number" name="current_sem" min="1" max="8"
+                     th:value="${user['current_sem']} ?: 1"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coordinator details -->
+        <div th:if="${user['role'] == 'coordinator'}"
+             style="border-top:1px solid var(--color-border-tertiary);margin:1rem 0;padding-top:1rem">
+          <div style="font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-bottom:1rem;text-transform:uppercase;letter-spacing:.5px">🎓 Coordinator Details</div>
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <input class="form-input" name="department" th:value="${user['department']} ?: ''" placeholder="e.g. Computer Science"/>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="justify-content:flex-start;gap:.75rem;margin-top:1.5rem">
+          <button type="submit" class="btn-primary" style="width:auto;padding:9px 24px">💾 Save Changes</button>
+          <a th:href="@{/admin/users}" class="btn-secondary" style="text-decoration:none;padding:9px 20px;display:inline-block">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card" style="max-width:700px;margin-top:1.5rem;border:1px solid #f5c6c6">
+      <div class="card-title" style="color:var(--color-text-danger)">⚠️ Danger Zone</div>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem">
+        Permanently delete this user and all associated data. This action <strong>cannot be undone</strong>.
+      </p>
+      <form method="post"
+      th:action="@{/admin/users/hard-delete/{id}(id=${user['user_id']})}"
+      th:attr="data-name=${user['full_name']}"
+      onsubmit="return confirm('WARNING: Permanently delete ' + this.dataset.name + ' and ALL their data?');">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn-small btn-reject"
+                style="padding:8px 18px;font-size:13px;background:#dc3545;color:#fff;border:none;border-radius:5px;cursor:pointer">
+          🗑️ Permanently Delete User
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

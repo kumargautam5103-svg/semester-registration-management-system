@@ -1,0 +1,9 @@
+com\srms\SrmsApplication.class
+com\srms\controller\StudentController.class
+com\srms\controller\CoordinatorController.class
+com\srms\controller\ApiController.class
+com\srms\controller\AdminController.class
+com\srms\config\SrmsUserDetailsService.class
+com\srms\config\SecurityConfig.class
+com\srms\controller\AuthController.class
+com\srms\service\EmailService.class

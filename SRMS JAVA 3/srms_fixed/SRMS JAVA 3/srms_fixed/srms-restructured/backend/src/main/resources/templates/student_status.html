@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — My Status</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Student</div>
+    <a class="sidebar-item" th:href="@{/student}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item" th:href="@{/student/register}"><span class="icon">✎</span> Register</a>
+    <a class="sidebar-item active" th:href="@{/student/status}"><span class="icon">◈</span> My Status</a>
+  </div>
+
+  <div class="main-content">
+    <div class="page-title">My Registrations</div>
+    <div class="page-sub">History of your semester registration submissions</div>
+
+    <div th:if="${!#lists.isEmpty(regs)}">
+      <div th:each="item : ${regs}" class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Semester <span th:text="${item['semester']}"></span> — <span th:text="${item['acad_year']}"></span></span>
+          <span class="badge" th:classappend="'badge-' + ${item['status']}"
+                th:text="${#strings.capitalize(item['status'])}"></span>
+        </div>
+        <div class="detail-grid" style="margin-bottom:12px">
+          <div class="detail-item">
+            <label>Submitted</label>
+            <span th:text="${item['submitted_at'] != null ? item['submitted_at'] : '—'}"></span>
+          </div>
+          <div class="detail-item">
+            <label>Reviewed</label>
+            <span th:text="${item['reviewed_at'] != null ? item['reviewed_at'] : 'Awaiting review'}"></span>
+          </div>
+          <div th:if="${item['remarks']}" class="detail-item" style="grid-column:1/-1">
+            <label>Remarks</label>
+            <span th:text="${item['remarks']}"></span>
+          </div>
+        </div>
+        <div th:if="${item.subjects != null and !#lists.isEmpty(item.subjects)}">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px">REGISTERED SUBJECTS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span th:each="sub : ${item.subjects}" class="badge"
+                  style="background:#f0f0f0;color:#333;font-size:12px;padding:4px 10px"
+                  th:text="${sub}"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(regs)}" class="alert alert-info">
+      No registrations found.
+      <a th:href="@{/student/register}" style="color:#185FA5;font-weight:500;margin-left:4px">Register for this semester →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

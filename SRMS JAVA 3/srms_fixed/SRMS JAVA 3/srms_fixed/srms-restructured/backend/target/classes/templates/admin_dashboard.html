@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Admin Dashboard</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+<div th:if="${flash}" style="padding:0 1.5rem;margin-top:0.75rem">
+  <div class="alert" th:classappend="'alert-' + ${flash_type}" th:text="${flash}"></div>
+</div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Admin</div>
+    <a class="sidebar-item active" th:href="@{/admin}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item" th:href="@{/admin/users}"><span class="icon">👥</span> Users</a>
+    <a class="sidebar-item" th:href="@{/admin/courses}"><span class="icon">📚</span> Courses</a>
+    <a class="sidebar-item" th:href="@{/admin/subjects}"><span class="icon">📋</span> Subjects</a>
+  </div>
+
+  <div class="main-content">
+    <div class="page-title">Admin Dashboard</div>
+    <div class="page-sub">System overview and management</div>
+
+    <!-- Metrics -->
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Total Students</div><div class="metric-val" th:text="${total_students}">0</div></div>
+      <div class="metric"><div class="metric-label">Coordinators</div><div class="metric-val" th:text="${total_coords}">0</div></div>
+      <div class="metric"><div class="metric-label">Pending Registrations</div><div class="metric-val" style="color:#BA7517" th:text="${pending}">0</div></div>
+      <div class="metric"><div class="metric-label">Courses</div><div class="metric-val" th:text="${total_courses}">0</div></div>
+      <div class="metric"><div class="metric-label">Subjects</div><div class="metric-val" th:text="${total_subjects}">0</div></div>
+    </div>
+
+    <!-- Registration Period -->
+    <div class="card" style="margin-bottom:1.2rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:10px">
+        <div class="card-title" style="margin:0">📅 Registration Period Management</div>
+        <button class="btn-primary" style="width:auto;padding:8px 18px;font-size:13px"
+                onclick="document.getElementById('modal-newperiod').classList.add('open')">
+          + New Period
+        </button>
+      </div>
+
+      <!-- Active period banner -->
+      <th:block th:each="ap : ${all_periods}" th:if="${ap['is_open'] == true or ap['is_open'] == 1}">
+        <div style="background:#eafbea;border:1px solid #b2dfb2;border-radius:8px;padding:14px 18px;margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1a7f37;margin-bottom:4px">
+              ✅ Active Period — <span th:text="${ap['acad_year']}"></span>
+            </div>
+            <div style="font-size:12px;color:#555;display:flex;gap:16px;flex-wrap:wrap">
+              <span>🗓 Start: <strong th:text="${ap['start_date']} ?: 'Not set'"></strong></span>
+              <span>🏁 End: <strong th:text="${ap['end_date']} ?: 'Not set'"></strong></span>
+              <span style="color:#888">Created: <span th:text="${ap['created_at']} ?: '—'"></span></span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-small" style="background:#e8f4fd;color:#1a73e8;border:1px solid #c5d8f0"
+                    th:data-period-id="${ap['period_id']}"
+                    th:data-acad-year="${ap['acad_year']}"
+                    th:data-start-date="${ap['start_date']}"
+                    th:data-end-date="${ap['end_date']}"
+                    th:data-is-open="${ap['is_open']}"
+                    onclick="openEditModal(this)">
+              ✏️ Edit
+            </button>
+            <form method="post" th:action="@{/admin/registration-period}"
+                  onsubmit="return confirm('Close the active registration period?')">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <input type="hidden" name="action" value="close"/>
+              <button class="btn-small btn-reject" type="submit">✖ Close Period</button>
+            </form>
+          </div>
+        </div>
+      </th:block>
+
+      <!-- No active period warning -->
+<div th:if="${!hasOpenPeriod}" style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:14px 18px;margin-bottom:1.2rem;font-size:13px;color:#7c5500;">
+    ⚠️ No registration period is currently open. Click <strong>+ New Period</strong> to open one.
+</div>
+
+      <!-- Period history table -->
+      <div style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+        All Periods (<span th:text="${#lists.size(all_periods)}"></span>)
+      </div>
+
+      <div th:if="${!#lists.isEmpty(all_periods)}" class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Academic Year</th><th>Status</th><th>Start Date</th><th>End Date</th><th>Created</th><th style="width:120px">Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="p : ${all_periods}">
+              <td style="font-weight:500" th:text="${p['acad_year']}"></td>
+              <td>
+                <span th:if="${p['is_open'] == true or p['is_open'] == 1}" class="badge badge-approved">Open</span>
+                <span th:unless="${p['is_open'] == true or p['is_open'] == 1}" class="badge" style="background:#f0f0f0;color:#777">Closed</span>
+              </td>
+              <td style="font-size:13px" th:text="${p['start_date']} ?: '—'"></td>
+              <td style="font-size:13px" th:text="${p['end_date']} ?: '—'"></td>
+              <td style="font-size:12px;color:var(--color-text-secondary)" th:text="${p['created_at']} ?: '—'"></td>
+              <td>
+                <div style="display:flex;gap:4px;flex-wrap:wrap">
+                  <button class="btn-small" style="background:#e8f4fd;color:#1a73e8;border:1px solid #c5d8f0"
+                          th:data-period-id="${p['period_id']}"
+                          th:data-acad-year="${p['acad_year']}"
+                          th:data-start-date="${p['start_date']}"
+                          th:data-end-date="${p['end_date']}"
+                          th:data-is-open="${p['is_open'] == true or p['is_open'] == 1}"
+                          onclick="openEditModal(this)">
+                    ✏️
+                  </button>
+                  <form method="post" th:action="@{/admin/registration-period/delete/{id}(id=${p['period_id']})}"
+                        onsubmit="return confirm('Delete this period?')">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button class="btn-small btn-reject" type="submit">🗑</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+      <a th:href="@{/admin/users}" class="card" style="text-decoration:none;cursor:pointer;display:block">
+        <div style="font-size:22px;margin-bottom:6px">👥</div>
+        <div style="font-weight:500;font-size:14px">Manage Users</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">Add, edit, deactivate users</div>
+      </a>
+      <a th:href="@{/admin/courses}" class="card" style="text-decoration:none;cursor:pointer;display:block">
+        <div style="font-size:22px;margin-bottom:6px">📚</div>
+        <div style="font-weight:500;font-size:14px">Manage Courses</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">Add or remove courses</div>
+      </a>
+      <a th:href="@{/admin/subjects}" class="card" style="text-decoration:none;cursor:pointer;display:block">
+        <div style="font-size:22px;margin-bottom:6px">📋</div>
+        <div style="font-weight:500;font-size:14px">Manage Subjects</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">Add or remove subjects</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- New Period Modal -->
+<div class="modal-backdrop" id="modal-newperiod">
+  <div class="modal">
+    <div class="modal-title">📅 Open New Registration Period</div>
+    <form method="post" th:action="@{/admin/registration-period}">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden" name="action" value="open"/>
+      <div class="form-group">
+        <label class="form-label">Academic Year</label>
+        <input class="form-input" name="acad_year" placeholder="e.g. 2024-25" required/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input class="form-input" type="date" name="start_date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date</label>
+          <input class="form-input" type="date" name="end_date"/>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('modal-newperiod').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn-primary">Open Period</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Period Modal -->
+<div class="modal-backdrop" id="modal-editperiod">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit Registration Period</div>
+    <form method="post" id="edit-period-form" th:action="@{/admin/registration-period/edit/0}">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <div class="form-group">
+        <label class="form-label">Academic Year</label>
+        <input class="form-input" name="acad_year" id="edit-acad-year" required/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input class="form-input" type="date" name="start_date" id="edit-start"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date</label>
+          <input class="form-input" type="date" name="end_date" id="edit-end"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" name="is_open" id="edit-is-open"/> Mark as Open
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('modal-editperiod').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditModal(btn) {
+  var id = btn.getAttribute('data-period-id');
+  var year = btn.getAttribute('data-acad-year');
+  var start = btn.getAttribute('data-start-date');
+  var end = btn.getAttribute('data-end-date');
+  var isOpen = btn.getAttribute('data-is-open') === 'true';
+  document.getElementById('edit-acad-year').value = year;
+  document.getElementById('edit-start').value = (start && start !== 'null') ? start : '';
+  document.getElementById('edit-end').value = (end && end !== 'null') ? end : '';
+  document.getElementById('edit-is-open').checked = isOpen;
+  document.getElementById('edit-period-form').action = '/admin/registration-period/edit/' + id;
+  document.getElementById('modal-editperiod').classList.add('open');
+}
+</script>
+</body>
+</html>

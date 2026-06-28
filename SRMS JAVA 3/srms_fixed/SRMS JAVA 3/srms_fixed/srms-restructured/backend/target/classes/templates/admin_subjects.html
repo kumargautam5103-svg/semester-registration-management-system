@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Subject Management</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+<div th:if="${flash}" style="padding:0 1.5rem;margin-top:0.75rem">
+  <div class="alert" th:classappend="'alert-' + ${flash_type}" th:text="${flash}"></div>
+</div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Admin</div>
+    <a class="sidebar-item" th:href="@{/admin}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item" th:href="@{/admin/users}"><span class="icon">👥</span> Users</a>
+    <a class="sidebar-item" th:href="@{/admin/courses}"><span class="icon">📚</span> Courses</a>
+    <a class="sidebar-item active" th:href="@{/admin/subjects}"><span class="icon">📋</span> Subjects</a>
+  </div>
+
+  <div class="main-content">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+      <div>
+        <div class="page-title">Subject Management</div>
+        <div class="page-sub" style="margin-bottom:0">Subjects offered per course and semester</div>
+      </div>
+      <button class="btn-primary" onclick="document.getElementById('modal-addsubject').classList.add('open')">+ Add Subject</button>
+    </div>
+
+    <!-- Course filter -->
+    <form method="get" th:action="@{/admin/subjects}" class="search-row" style="margin-bottom:1rem">
+      <select class="filter-select" name="course" onchange="this.form.submit()">
+        <option value="">All courses</option>
+        <option th:each="c : ${courses}"
+                th:value="${c['short_code']}"
+                th:selected="${course_filter == c['short_code']}"
+                th:text="${c['short_code']}"></option>
+      </select>
+    </form>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>Subject Name</th><th>Course</th><th>Semester</th><th>Type</th><th style="width:80px">Actions</th></tr></thead>
+          <tbody>
+            <tr th:each="sub : ${subjects}">
+              <td style="font-size:12px;color:var(--color-text-secondary)" th:text="${sub['subject_code']}"></td>
+              <td style="font-weight:500" th:text="${sub['subject_name']}"></td>
+              <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(sub['short_code'])}"
+                        th:text="${sub['short_code']}"></span></td>
+              <td th:text="'Sem ' + ${sub['semester']}"></td>
+              <td>
+                <span th:if="${sub['is_elective'] == true or sub['is_elective'] == 1}"
+                      class="badge" style="background:#EEEDFE;color:#534AB7">Elective</span>
+                <span th:unless="${sub['is_elective'] == true or sub['is_elective'] == 1}"
+                      class="badge" style="background:#f0f0f0;color:#555">Core</span>
+              </td>
+              <td>
+               <form method="post"
+      th:action="@{/admin/subjects/delete/{id}(id=${sub['subject_id']})}"
+      th:attr="data-name=${sub['subject_name']},data-elective=${sub['is_elective']}"
+      onsubmit="return confirmSubjectDelete(this.dataset.name, this.dataset.elective === 'true' || this.dataset.elective === '1');"
+      style="display:inline">
+                  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                  <button class="btn-small btn-reject" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(subjects)}">
+              <td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No subjects found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Subject Modal -->
+<div class="modal-backdrop" id="modal-addsubject" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">Add New Subject</div>
+    <form method="post" th:action="@{/admin/subjects/add}">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <div class="form-group">
+        <label class="form-label">Subject Name</label>
+        <input class="form-input" name="subject_name" placeholder="Subject name" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject Code</label>
+        <input class="form-input" name="subject_code" placeholder="e.g. BCA-S4-XX" required/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <select class="form-select" name="course_id" required>
+            <option th:each="c : ${courses}" th:value="${c['course_id']}" th:text="${c['short_code']}"></option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Semester</label>
+          <select class="form-select" name="semester" required>
+            <option th:each="i : ${#numbers.sequence(1,8)}" th:value="${i}" th:text="'Semester ' + ${i}"></option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" name="is_elective"/> Mark as Elective
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('modal-addsubject').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn-primary" style="width:auto;padding:8px 20px">Add Subject</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function confirmSubjectDelete(name, isElective) {
+  if (isElective) return confirm('Delete elective "' + name + '"? It will be removed from all registrations.');
+  return confirm('Delete core subject "' + name + '"? This will fail if it is in any registration.');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Semester Registration</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <div class="nav-avatar" sec:authentication="name"></div>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div th:if="${msg}" style="padding:0 1.5rem;margin-top:0.75rem">
+  <div class="alert" th:classappend="'alert-' + ${msg_type}" th:text="${msg}"></div>
+</div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Student</div>
+    <a class="sidebar-item" th:href="@{/student}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item active" th:href="@{/student/register}"><span class="icon">✎</span> Register</a>
+    <a class="sidebar-item" th:href="@{/student/status}"><span class="icon">◈</span> My Status</a>
+  </div>
+
+  <div class="main-content">
+    <div class="page-title">Semester Registration</div>
+    <div class="page-sub">Select your semester, choose subjects and upload your fee receipt</div>
+
+    <div th:unless="${reg_open}" class="alert alert-warn">
+      ⚠ Registration is currently <strong>closed</strong>. Please check back when your coordinator opens it.
+    </div>
+
+    <!-- Already registered -->
+    <div th:if="${existing != null}">
+      <div class="alert"
+           th:classappend="${existing['status'] == 'approved'} ? 'alert-success' : (${existing['status'] == 'rejected'} ? 'alert-danger' : 'alert-warn')">
+        Registration already submitted for Semester <span th:text="${selected_sem}"></span> — Status:
+        <strong th:text="${#strings.capitalize(existing['status'])}"></strong>.
+        View details in <a th:href="@{/student/status}" style="color:inherit;font-weight:500">My Status</a>.
+      </div>
+    </div>
+
+    <!-- Registration form -->
+    <div th:if="${existing == null and student != null}">
+      <!-- Semester selector tabs -->
+      <div th:if="${all_semesters}" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.2rem">
+        <a th:each="sem : ${all_semesters}"
+           th:href="@{/student/register(sem=${sem})}"
+           th:classappend="${sem == selected_sem} ? 'btn-primary' : 'btn-secondary'"
+           style="padding:6px 14px;font-size:13px;text-decoration:none">
+          Sem <span th:text="${sem}"></span>
+          <span th:if="${sem == student['current_sem']}"> ★</span>
+        </a>
+      </div>
+
+      <div class="alert alert-info">
+        Registering for <strong>Semester <span th:text="${selected_sem}"></span></strong>
+        — Academic Year <span th:text="${acad_year}"></span>
+        <span th:if="${selected_sem == student['current_sem']}">(your current semester)</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Registration Form</div>
+        <form method="post" th:action="@{/student/register}" enctype="multipart/form-data">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="semester" th:value="${selected_sem}"/>
+
+          <div class="form-row" style="margin-bottom:12px">
+            <div class="form-group">
+              <label class="form-label">Course</label>
+              <input class="form-input" th:value="${student['course_name']}" readonly/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Semester</label>
+              <input class="form-input" th:value="'Semester ' + ${selected_sem}" readonly/>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Academic Year</label>
+            <input class="form-input" th:value="${acad_year}" readonly/>
+          </div>
+
+          <div th:if="${!#lists.isEmpty(subjects)}" class="form-group">
+            <label class="form-label">Select Subjects <span style="color:#999;font-weight:400">(minimum 2)</span></label>
+            <div class="subject-grid">
+              <label th:each="sub : ${subjects}"
+                     class="subject-check"
+                     th:classappend="${sub['is_elective'] == false or sub['is_elective'] == 0} ? ' selected' : ''"
+                     th:id="'lbl-' + ${sub['subject_id']}">
+                <input type="checkbox" name="subjects"
+                       th:value="${sub['subject_id']}"
+                       th:checked="${sub['is_elective'] == false or sub['is_elective'] == 0}"
+                       th:onchange="'toggleSubject(this, ' + ${sub['subject_id']} + ')'"/>
+                <span th:text="${sub['subject_name']}"></span>
+                <span th:if="${sub['is_elective'] == true or sub['is_elective'] == 1}"
+                      style="font-size:10px;color:#999;margin-left:4px">(Elective)</span>
+              </label>
+            </div>
+          </div>
+          <div th:unless="${!#lists.isEmpty(subjects)}" class="alert alert-warn">
+            No subjects found for Semester <span th:text="${selected_sem}"></span>. Contact your coordinator.
+          </div>
+
+          <div class="form-group" style="margin-top:1rem">
+            <label class="form-label">Fee Receipt
+              <span style="color:#999;font-weight:400;font-size:12px"> — PDF, JPG or PNG (max 5 MB)</span>
+            </label>
+            <input class="form-input" type="file" name="fee_receipt" accept=".pdf,.jpg,.jpeg,.png"
+                   style="padding:6px"/>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px">
+              Upload a scanned copy or photo of your fee payment receipt.
+            </div>
+          </div>
+
+          <div style="margin-top:1.2rem;display:flex;gap:8px">
+            <a class="btn-secondary" th:href="@{/student}">Cancel</a>
+            <button class="btn-primary" type="submit" th:disabled="${!reg_open}">Submit Registration</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div th:if="${student == null}" class="alert alert-warn">
+      Student profile not found. Please contact administrator.
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSubject(el, id) {
+  const lbl = document.getElementById('lbl-' + id);
+  lbl.classList.toggle('selected', el.checked);
+}
+</script>
+</body>
+</html>

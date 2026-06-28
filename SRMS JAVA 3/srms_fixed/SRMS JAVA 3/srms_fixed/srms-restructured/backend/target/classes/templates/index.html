@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SRMS — Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f5f5f5;
+      --color-text-primary: #111111;
+      --color-text-secondary: #666666;
+      --color-text-tertiary: #999999;
+      --color-border-tertiary: #e0e0e0;
+      --color-border-secondary: #cccccc;
+      --border-radius-md: 6px;
+      --border-radius-lg: 10px;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      background:
+        linear-gradient(135deg, rgba(24,95,165,0.88) 0%, rgba(12,68,124,0.80) 100%),
+        url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=80') center/cover no-repeat fixed;
+    }
+    .nav {
+      background: rgba(255,255,255,0.12);
+      border-bottom: 0.5px solid rgba(255,255,255,0.2);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      height: 52px;
+      backdrop-filter: blur(8px);
+    }
+    .nav-brand { font-size: 15px; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+    .nav-brand .dot { width: 8px; height: 8px; border-radius: 50%; background: #7EC8FF; }
+    .login-wrap { min-height: calc(100vh - 52px); display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .login-card {
+      background: rgba(255,255,255,0.97);
+      border: 0.5px solid rgba(255,255,255,0.8);
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      backdrop-filter: blur(4px);
+    }
+    .login-logo { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #185FA5, #0C447C); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 1.25rem; }
+    .login-title { font-size: 22px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 4px; }
+    .login-sub { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 2rem; }
+    .login-hint { font-size: 11px; color: var(--color-text-tertiary); text-align: center; margin-top: 12px; line-height: 1.6; }
+    .forgot-link { font-size: 12px; color: #185FA5; cursor: pointer; text-align: right; margin-top: -8px; margin-bottom: 1rem; display: block; text-decoration: none; }
+    .forgot-link:hover { text-decoration: underline; }
+    .form-group { margin-bottom: 1rem; }
+    .form-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; display: block; font-weight: 500; }
+    .form-input { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 14px; background: var(--color-background-primary); color: var(--color-text-primary); font-family: var(--font-sans); transition: border-color 0.15s, box-shadow 0.15s; }
+    .form-input:focus { outline: none; border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.12); }
+    .btn-primary { padding: 11px 16px; background: linear-gradient(135deg, #185FA5, #0C447C); color: #fff; border: none; border-radius: var(--border-radius-md); font-size: 15px; font-weight: 500; cursor: pointer; width: 100%; transition: opacity 0.15s; }
+    .btn-primary:hover { opacity: 0.9; }
+    .alert-danger { padding: 10px 14px; border-radius: var(--border-radius-md); font-size: 13px; margin-bottom: 1rem; background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F09595; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  </nav>
+
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">🎓</div>
+      <div class="login-title">Welcome back</div>
+      <div class="login-sub">Sign in to the semester registration portal</div>
+
+      <div th:if="${error}" class="alert-danger" th:text="${error}"></div>
+      <div th:if="${param.error}" class="alert-danger">Invalid credentials. Please try again.</div>
+
+      <form method="post" th:action="@{/login}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" name="username" placeholder="Enter your username" required autofocus/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" name="password" placeholder="••••••••" required/>
+        </div>
+        <a class="forgot-link" th:href="@{/forgot-password}">Forgot password?</a>
+        <button class="btn-primary" type="submit">Sign in</button>
+      </form>
+
+      <div class="login-hint" style="margin-top:16px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary)">
+        Demo credentials &nbsp;|&nbsp;
+        Student: <strong>student / pass123</strong> &nbsp;|&nbsp;
+        Coordinator: <strong>coord / pass123</strong> &nbsp;|&nbsp;
+        Admin: <strong>admin / pass123</strong>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/common :: head('Student Dashboard')}"></head>
+<body>
+<div th:replace="~{fragments/common :: nav}"></div>
+<div th:replace="~{fragments/common :: flash}"></div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Student</div>
+    <a class="sidebar-item active" th:href="@{/student}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item" th:href="@{/student/register}"><span class="icon">✎</span> Register</a>
+    <a class="sidebar-item" th:href="@{/student/status}"><span class="icon">◈</span> My Status</a>
+  </div>
+
+  <div class="main-content">
+    <div class="page-title">Student Dashboard</div>
+    <div class="page-sub" sec:authentication="name">Welcome</div>
+
+    <div th:if="${student}">
+      <div class="card">
+        <div class="card-title">My Profile</div>
+        <div class="profile-row">
+          <div class="profile-avatar" th:text="${#strings.toUpperCase(#strings.substring(student['full_name'], 0, 2))}">??</div>
+          <div>
+            <div class="profile-name" th:text="${student['full_name']}">Name</div>
+            <div class="profile-course">
+              <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(student['short_code'])}"
+                    th:text="${student['short_code']}">BCA</span>
+              &nbsp;Semester <span th:text="${student['current_sem']}">1</span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Roll No</label><span th:text="${student['roll_no']}">—</span></div>
+          <div class="detail-item"><label>Email</label><span th:text="${student['email']} ?: '—'">—</span></div>
+          <div class="detail-item"><label>Course</label><span th:text="${student['course_name']}">—</span></div>
+          <div class="detail-item"><label>Batch</label><span th:text="${student['batch']} ?: '—'">—</span></div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="metric-label">Current Semester</div>
+          <div class="metric-val" th:text="${student['current_sem']}">1</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Subjects Selected</div>
+          <div class="metric-val" th:text="${reg_subjects != null ? #lists.size(reg_subjects) : 0}">0</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Registration Status</div>
+          <div class="metric-val" style="font-size:14px;margin-top:4px">
+            <span th:if="${reg != null}" class="badge"
+                  th:classappend="'badge-' + ${reg['status']}"
+                  th:text="${#strings.capitalize(reg['status'])}">Pending</span>
+            <span th:unless="${reg != null}" class="badge"
+                  style="background:#f5f5f5;color:#666">Not Submitted</span>
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${reg != null and reg_subjects != null and !#lists.isEmpty(reg_subjects)}" class="card">
+        <div class="card-title">Registered Subjects — Semester <span th:text="${student['current_sem']}"></span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+          <span th:each="sub : ${reg_subjects}" class="badge"
+                style="background:#f0f0f0;color:#333;font-size:12px;padding:4px 10px"
+                th:text="${sub}">Subject</span>
+        </div>
+      </div>
+
+      <div th:unless="${reg != null}" class="alert alert-info">
+        You have not submitted your semester registration yet.
+        <a th:href="@{/student/register}" style="color:#185FA5;font-weight:500;margin-left:8px">Register now →</a>
+      </div>
+    </div>
+
+    <div th:unless="${student}" class="alert alert-warn">
+      Student profile not found. Please contact the administrator.
+    </div>
+  </div>
+</div>
+</body>
+</html>

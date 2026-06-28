@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SRMS — Verify Registrations</title>
+  <link rel="stylesheet" th:href="@{/css/srms.css}"/>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><div class="dot"></div> SRMS — Semester Registration</div>
+  <div class="nav-right">
+    <span class="nav-user" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn-logout">Log out</button>
+    </form>
+  </div>
+</nav>
+<div th:if="${flash}" style="padding:0 1.5rem;margin-top:0.75rem">
+  <div class="alert" th:classappend="'alert-' + ${flash_type}" th:text="${flash}"></div>
+</div>
+
+<div class="dash-layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Coordinator</div>
+    <a class="sidebar-item" th:href="@{/coordinator}"><span class="icon">◉</span> Overview</a>
+    <a class="sidebar-item" th:href="@{/coordinator/students}"><span class="icon">👤</span> Students</a>
+    <a class="sidebar-item active" th:href="@{/coordinator/verify}"><span class="icon">✔</span> Verify</a>
+  </div>
+
+  <div class="main-content">
+    <div class="page-title">Verify Registrations</div>
+    <div class="page-sub">Review pending registrations — check fee receipts and approve or reject</div>
+
+    <div th:if="${!#lists.isEmpty(pending)}">
+      <div th:each="row : ${pending}" class="card" th:id="'reg-' + ${row['reg_id']}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div style="font-size:15px;font-weight:500" th:text="${row['full_name']}"></div>
+            <div style="font-size:12px;color:var(--color-text-secondary)">
+              <span th:text="${row['roll_no']}"></span> &nbsp;·&nbsp;
+              <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(row['short_code'])}"
+                    th:text="${row['short_code']}"></span>
+              &nbsp;·&nbsp; Semester <span th:text="${row['semester']}"></span>
+              &nbsp;·&nbsp; <span th:text="${row['acad_year']}"></span>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-tertiary)"
+               th:text="${row['submitted_at'] != null ? 'Submitted ' + row['submitted_at'] : ''}"></div>
+        </div>
+
+        <!-- Subjects -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">Subjects</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span th:each="sub : ${row['subjects'] != null ? row['subjects'].split(', ') : new String[0]}"
+                  th:if="${!#strings.isEmpty(sub)}"
+                  class="badge" style="background:#f0f0f0;color:#333;font-size:12px;padding:4px 10px"
+                  th:text="${sub}"></span>
+          </div>
+        </div>
+
+        <!-- Fee Receipt -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">Fee Receipt</div>
+          <a th:if="${row['fee_receipt_path'] != null}"
+             th:href="@{/coordinator/receipt/{f}(f=${row['fee_receipt_path']})}"
+             target="_blank" class="btn-small"
+             style="background:#e8f4fd;color:#1a73e8;border:1px solid #c5d8f0;text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+            📄 View Receipt
+          </a>
+          <span th:unless="${row['fee_receipt_path'] != null}"
+                style="font-size:12px;color:#e53935;font-weight:500">⚠ No fee receipt uploaded</span>
+        </div>
+
+        <!-- Action Form -->
+        <form method="post" th:action="@{/coordinator/action}"
+              style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="reg_id" th:value="${row['reg_id']}"/>
+          <input class="search-input" name="remarks" placeholder="Remarks (optional)" style="flex:1;min-width:160px"/>
+          <button class="btn-small btn-approve" type="submit" name="action" value="approved">✓ Approve</button>
+          <button class="btn-small btn-reject"  type="submit" name="action" value="rejected">✗ Reject</button>
+        </form>
+      </div>
+    </div>
+
+    <div th:unless="${!#lists.isEmpty(pending)}" class="alert alert-success">
+      All registrations have been reviewed. No pending items.
+    </div>
+  </div>
+</div>
+</body>
+</html>
